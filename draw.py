@@ -1,9 +1,27 @@
 #!/bin/env python3
+import sys, io
 import numpy as np
-
 BETA = np.log(2)
+EMAIL = 'quantumcroupier@gmail.com'
+MEDALS = ['🥇', '🥈', '🥉']
 
-np.random.seed(835845000375724 % (2**32))
+if sys.argv[1:]:
+    passwd = sys.argv[1]
+    email = True
+    _print = print
+    mail = io.StringIO()
+    def print(*args):
+        _print(*args)
+        _print(*args, file=mail)
+else:
+    email = False
+
+
+seed = 835845000375724 % (2**32)
+
+np.random.seed(seed)
+
+# read and validate input -----------------------------------------------------
 
 with open("attendees.txt") as f:
     attendees = np.array([l.strip() for l in f.readlines() if not l.startswith("#")])
@@ -14,7 +32,11 @@ with open("speakers.txt") as f:
 # print(speakers)
 week = len(speakers) + 1
 
-print(f"Week {week}")
+print("=" * 10 + f" Week {week} " + "=" * 10)
+
+print()
+print(f'seed = {seed}')
+print()
 
 with open("zeros.txt") as f:
     zeros = [l.strip().split(", ") for l in f.readlines() if not l.startswith("#")]
@@ -36,11 +58,14 @@ for pers in set(p for wk in zeros for p in wk):
         print(f'WARN: zeroed-out person "{pers}" is not attendee')
 
 llz, lz, z = [[], [], *zeros][-3:]
-print("weight doubled for zeroing 2 weeks ago: " + ", ".join(llz))
-print("weight doubled for zeroing last week:   " + ", ".join(lz))
-print("zeroed this week: " + ", ".join(z))
+llz and print("weight doubled for zeroing 2 weeks ago: " + ", ".join(llz))
+lz and print("weight doubled for zeroing last week:   " + ", ".join(lz))
+z and print("zeroed this week: " + ", ".join(z))
 assert len(set(z + lz + llz)) == len(z + lz + llz), "someone zeroed out too often!!"
 print()
+
+
+# comute probabilites & draw ---------------------------------------------------
 
 count = np.fromiter(map(speakers.count, attendees), dtype=int)
 weights = (
@@ -52,12 +77,39 @@ weights = (
 )
 weights /= sum(weights)
 
-pad = max(7, *(len(p) for p in attendees))
-print("Speaker", " " * (pad - 7), "prob")
+pad = max(11, *(len(p) for p in attendees))
+print("Participant", " " * (pad - 11), "prob")
 print("-" * (2 + pad + 5))
 for pers, prob in zip(attendees, weights):
     print(pers, " " * (pad - len(pers)), f"{prob:.3}")
 
-# print(random.choices(attendees, weights=weights, k=3))
-print("\nAnd the winners are...")
-print(np.random.choice(attendees, size=3, replace=False, p=weights))
+winners = np.random.choice(attendees, size=3, replace=False, p=weights)
+print(f"\nAnd the winner is... {winners[0]}🎉")
+
+
+print("The backups are:")
+for n, pers in enumerate(winners[1:]):
+    print(f"{n + 1}. {pers}{MEDALS[n+1]}")
+
+
+# send email
+
+if not email: exit()
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
+with open('emails.txt') as f:
+    to_addrs = [l.strip() for l in f.readlines()]
+
+text = '<font face="Courier, Courier New, monospace">' + mail.getvalue().replace('\n','<br>').replace(' ', '&nbsp;') + '</font>'
+
+message = MIMEMultipart()
+message['From'] = EMAIL
+message['To'] = 'recipient-superposition'
+message['Subject'] = 'The 🎲Quantum Croupier🎲 is pleased to announce tomorrows speaker.'
+message.attach(MIMEText(text.encode('utf8'), 'html', _charset='utf8'))
+
+with smtplib.SMTP_SSL('smtp.gmail.com', 465) as conn:
+     conn.login(EMAIL, passwd)
+     conn.sendmail(from_addr=EMAIL, to_addrs=to_addrs, msg=message.as_string())
