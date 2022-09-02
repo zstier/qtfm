@@ -1,6 +1,8 @@
 #!/bin/env python3
 import numpy as np
 
+BETA = np.log(2)
+
 np.random.seed(835845000375724 % (2**32))
 
 with open("attendees.txt") as f:
@@ -18,12 +20,16 @@ with open("zeros.txt") as f:
 
 assert len(zeros) == week - 1
 
-weights = np.array(
-    [(not speakers[-1] == pers) / (1 + speakers.count(pers)) for pers in attendees]
-)
-
-
+count = np.fromiter(map(speakers.count, attendees), dtype=int)
+weights = np.exp(-BETA * count) * (np.array(attendees) != speakers[-1])
 weights /= sum(weights)
 
+pad = max(7, *(len(p) for p in attendees))
+print('Speaker', ' ' * (pad - 7), 'prob')
+print('-' * (2 + pad + 5))
+for pers, prob in zip(attendees, weights):
+    print(pers, ' ' * (pad - len(pers)), f'{prob:.3}')
+
 # print(random.choices(attendees, weights=weights, k=3))
+print('\nAnd the winners are...')
 print(np.random.choice(attendees, size=3, replace=False, p=weights))
