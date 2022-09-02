@@ -8,9 +8,11 @@ with open("speakers.txt") as file:
 # print(speakers)
 
 with open("attendees.txt") as file:
-    attendees = sorted(map(str.strip, file.readlines())
+    attendees = sorted(map(str.strip, file.readlines()))
 
-weights = np.array([(not speakers[-1] == pers) / (1 + speakers.count(pers)) for pers in attendees])
+weights = np.array(
+    [(not speakers[-1] == pers) / (1 + speakers.count(pers)) for pers in attendees]
+)
 
 weights /= sum(weights)
 
