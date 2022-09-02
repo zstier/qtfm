@@ -11,9 +11,7 @@ weights = []
 with open("speakers.txt") as file:
     lines = file.readlines()
 for x in lines:
-    s = x
-    if x[-1] == "\n":
-        s = x[:-1]
+    s = x.strip()
     speakers.append(s)
 # print(speakers)
 
