@@ -3,16 +3,25 @@ import numpy as np
 
 np.random.seed(835845000375724 % (2**32))
 
-with open("speakers.txt") as file:
-    speakers = [l.strip() for l in file.readlines()]
+with open("attendees.txt") as f:
+    attendees = sorted(l.strip() for l in f.readlines() if not l.startswith('#'))
+
+with open("speakers.txt") as f:
+    speakers = [l.strip() for l in f.readlines() if not l.startswith('#')]
 # print(speakers)
 
-with open("attendees.txt") as file:
-    attendees = sorted(map(str.strip, file.readlines()))
+week = len(speakers) + 1
+assert all(pers in attendees for pers in speakers)
+
+with open("zeros.txt") as f:
+    zeros = [l.strip().split(', ') for l in f.readlines() if not l.startswith('#')]
+
+assert len(zeros) == week - 1
 
 weights = np.array(
     [(not speakers[-1] == pers) / (1 + speakers.count(pers)) for pers in attendees]
 )
+
 
 weights /= sum(weights)
 
