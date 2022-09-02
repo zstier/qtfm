@@ -10,37 +10,16 @@ attendees = []
 weights = []
 
 with open("speakers.txt") as file:
-    lines = file.readlines()
-for x in lines:
-    s = x.strip()
-    speakers.append(s)
+    speakers = [l.strip() for l in file.readlines()]
 # print(speakers)
 
 with open("attendees.txt") as file:
-    lines = file.readlines()
-for x in lines:
-    s = x.strip()
-    # print(s)
-    attendees.append(s)
-    weights.append(0)
-    for t in speakers:
-        if t == s:
-            weights[-1] += 1
-# print(attendees)
-for s in range(len(attendees)):
-    if attendees[s] == speakers[-1]:
-        weights[s] = 0
-    else:
-        weights[s] = 1 / (1 + weights[s])
-# print(attendees,weights)
+    attendees = sorted(map(str.strip, file.readlines())
 
-tot = 0
-for s in range(len(attendees)):
-    tot += weights[s]
-for s in range(len(attendees)):
-    weights[s] /= tot
+weights = np.array([(not speakers[-1] == pers) / (1 + speakers.count(pers)) for pers in attendees])
 
-attendees.sort()
+weights /= sum(weights)
+
 # print(random.choices(attendees, weights=weights, k=3))
 print(np.random.choice(attendees, size=3, replace=False, p=weights))
 
