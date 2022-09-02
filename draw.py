@@ -1,46 +1,47 @@
 import numpy as np
+
 # import random
 
-np.random.seed(835845000375724%(2**32))
+np.random.seed(835845000375724 % (2**32))
 
 speakers = []
 attendees = []
 weights = []
 
 with open("speakers.txt") as file:
-	lines = file.readlines()
+    lines = file.readlines()
 for x in lines:
-	s = x
-	if x[-1] == '\n':
-		s = x[:-1]
-	speakers.append(s)
+    s = x
+    if x[-1] == "\n":
+        s = x[:-1]
+    speakers.append(s)
 # print(speakers)
 
 with open("attendees.txt") as file:
-	lines = file.readlines()
+    lines = file.readlines()
 for x in lines:
-	s = x
-	if x[-1]=='\n':
-		s = x[:-1]
-	# print(s)
-	attendees.append(s)
-	weights.append(0)
-	for t in speakers:
-		if t == s:
-			weights[-1] += 1
+    s = x
+    if x[-1] == "\n":
+        s = x[:-1]
+    # print(s)
+    attendees.append(s)
+    weights.append(0)
+    for t in speakers:
+        if t == s:
+            weights[-1] += 1
 # print(attendees)
 for s in range(len(attendees)):
-	if attendees[s] == speakers[-1]:
-		weights[s] = 0
-	else:
-		weights[s] = 1/(1+weights[s])
+    if attendees[s] == speakers[-1]:
+        weights[s] = 0
+    else:
+        weights[s] = 1 / (1 + weights[s])
 # print(attendees,weights)
 
 tot = 0
 for s in range(len(attendees)):
-	tot += weights[s]
+    tot += weights[s]
 for s in range(len(attendees)):
-	weights[s] /= tot
+    weights[s] /= tot
 
 # print(random.choices(attendees, weights=weights, k=3))
 print(np.random.choice(attendees, size=3, replace=False, p=weights))
