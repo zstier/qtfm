@@ -20,9 +20,7 @@ for x in lines:
 with open("attendees.txt") as file:
     lines = file.readlines()
 for x in lines:
-    s = x
-    if x[-1] == "\n":
-        s = x[:-1]
+    s = x.strip()
     # print(s)
     attendees.append(s)
     weights.append(0)
@@ -43,6 +41,7 @@ for s in range(len(attendees)):
 for s in range(len(attendees)):
     weights[s] /= tot
 
+attendees.sort()
 # print(random.choices(attendees, weights=weights, k=3))
 print(np.random.choice(attendees, size=3, replace=False, p=weights))
 
