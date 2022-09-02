@@ -5,10 +5,6 @@ import numpy as np
 
 np.random.seed(835845000375724 % (2**32))
 
-speakers = []
-attendees = []
-weights = []
-
 with open("speakers.txt") as file:
     speakers = [l.strip() for l in file.readlines()]
 # print(speakers)
