@@ -14,6 +14,12 @@ RNGBOT_URL = "https://twitter.com/rndgenbot"
 terminal = print
 _print = print
 
+if sys.argv[1:] and sys.argv[1] == '--dry':
+    DRY = True
+    sys.argv.pop(1)
+else:
+    DRY = False
+
 if sys.argv[2:]:
     passwd = sys.argv[2]
     email = True
@@ -39,6 +45,7 @@ with open("speakers.txt") as f:
 # print(speakers)
 week = len(speakers) + 1
 
+if DRY: print("=" * 10 + "DRY RUN" + "=" * 10)
 print("=" * 10 + f" Week {week} " + "=" * 10)
 print(f"It is {dt.now().strftime('%Y-%m-%d %H:%M:%S')}.")
 
@@ -62,9 +69,9 @@ for pers in set(p for wk in zeros for p in wk):
         print(f'WARN: zeroed-out person "{pers}" is not attendee')
 
 llz, lz, z = [[], [], *zeros][-3:]
-llz and print("weight doubled for zeroing 2 weeks ago: " + ", ".join(llz))
-lz and print("weight doubled for zeroing last week:   " + ", ".join(lz))
-z and print("zeroed this week: " + ", ".join(z))
+if llz: print("weight doubled for zeroing 2 weeks ago: " + ", ".join(llz))
+if lz:  print("weight doubled for zeroing last week:   " + ", ".join(lz))
+if z:   print("zeroed this week: " + ", ".join(z))
 assert len(set(z + lz + llz)) == len(z + lz + llz), "someone zeroed out too often!!"
 print()
 
@@ -124,9 +131,9 @@ croupier('</pre>', end='')
 
 winners = np.random.choice(attendees, size=3, replace=False, p=weights)
 print(f"\nAnd the winner is ... ", end="")
-croupier('<marquee>', end='')
+croupier('<marquee><b>', end='')
 print(f"🎉 {winners[0]} 🎉", end='')
-croupier('</marquee>', end='')
+croupier('</marquee></b>', end='')
 print()
 croupier(
     "If you can't talk tomorrow for some reason please reply-all ASAP so that the backup speaker may prepare"
@@ -142,6 +149,8 @@ if twitter:
     for i, tw in enumerate(tweets):
         terminal(f'{[i+1]} https://twitter.com/rndgenbot/status/{tw.id}')
 
+croupier('Alea iacta est,\nthe 🎲<a href="https://github.com/zstier/qtfm">Quantum Croupier</a>🎲')
+
 # send email -------------------------------------------------------------------
 SUBJECT = "The 🎲Quantum Croupier🎲 is pleased to announce tomorrow's speaker."
 
@@ -153,6 +162,8 @@ from email.mime.text import MIMEText
 
 with open("emails.txt") as f:
     to_addrs = [l.strip() for l in f.readlines()]
+    if DRY:
+        to_addrs = to_addrs[:1]
 
 text = (
     '<font style="font-size: 13px" face="DejaVu Sans Mono, Courier, Courier New, monospace">'
@@ -163,7 +174,7 @@ text = (
 )
 # text = re.sub(r"(🎉.*🎉)", "<marquee><b>\\1</b></marquee>", text)
 for i, tw in enumerate(tweets):
-    text = text.replace(f'[{i+1}]', f'<a href="https://twitter.com/rndgenbot/status/{tw.id}">[{i+1}]<a>')
+    text = text.replace(f'[{i+1}]', f'<a href="https://twitter.com/rndgenbot/status/{tw.id}">[{i+1}]</a>')
 
 message = MIMEMultipart()
 message["From"] = "quantumcroupier@math.berkeley.edu"
