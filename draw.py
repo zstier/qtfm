@@ -50,7 +50,7 @@ print("=" * 10 + f" Week {week} " + "=" * 10)
 print(f"It is {dt.now().strftime('%Y-%m-%d %H:%M:%S')}.")
 
 with open("zeros.txt") as f:
-    zeros = [l.strip().split(", ") for l in f.readlines() if not l.startswith("#")]
+    zeros = [l.strip().split(",") for l in f.readlines() if not l.startswith("#")]
     for z in zeros:
         if "" in z:
             z.remove("")
