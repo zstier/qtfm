@@ -59,7 +59,7 @@ with open("zeros.txt") as f:
         len(zeros) >= week
     ), "zeros.txt needs to have at least (# past talks) + 1 lines"
     assert not any(zeros[week:]), "people have zeroed out for future weeks??"
-
+    zeros = zeros[:week]
 
 for pers in set(speakers):
     if pers not in attendees:
@@ -152,7 +152,7 @@ if twitter:
 croupier('Alea iacta est,\nthe 🎲<a href="https://github.com/zstier/qtfm">Quantum Croupier</a>🎲')
 
 # send email -------------------------------------------------------------------
-SUBJECT = "The 🎲Quantum Croupier🎲 is pleased to announce tomorrow's speaker."
+SUBJECT = "[DRY] " * DRY + "The 🎲Quantum Croupier🎲 is pleased to announce tomorrow's speaker."
 
 if not email:
     exit()
