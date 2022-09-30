@@ -49,6 +49,17 @@ if DRY: print("=" * 10 + "DRY RUN" + "=" * 10)
 print("=" * 10 + f" Week {week} " + "=" * 10)
 print(f"It is {dt.now().strftime('%Y-%m-%d %H:%M:%S')}.")
 
+with open("miss.txt") as f:
+    miss = [l.strip().split(",") for l in f.readlines() if not l.startswith("#")]
+    for m in miss:
+        if "" in m:
+            m.remove("")
+    # Now let's do a bunch of sanity checks!
+    assert (
+        len(miss) >= week
+    ), "miss.txt needs to have at least (# past talks) + 1 lines"
+    miss = miss[week-1]
+
 with open("zeros.txt") as f:
     zeros = [l.strip().split(",") for l in f.readlines() if not l.startswith("#")]
     for z in zeros:
@@ -72,8 +83,11 @@ llz, lz, z = [[], [], *zeros][-3:]
 if llz: print("weight doubled for zeroing 2 weeks ago: " + ", ".join(llz))
 if lz:  print("weight doubled for zeroing last week:   " + ", ".join(lz))
 if z:   print("zeroed this week: " + ", ".join(z))
+if miss:   print("missing this week: " + ", ".join(miss))
 assert len(set(z + lz + llz)) == len(z + lz + llz), "someone zeroed out too often!!"
 print()
+assert not set(z) & set(miss), "People missing don't need to zero out"
+assert not (set(lz) | set(llz)) & set(miss), "It looks like someone might be trying to escape their increased weight"
 
 if sys.argv[1:]:
     import tweepy
@@ -106,12 +120,14 @@ print()
 # compute probabilites & draw --------------------------------------------------
 
 count = np.fromiter(map(speakers.count, attendees), dtype=int)
+
 weights = (
     np.exp(-BETA * count)
     * (attendees != speakers[-1])  # speaker gets weight 0
     * 2 ** np.isin(attendees, lz)  # x2 weight for ppl who zeroed in the past 2 weeks
     * 2 ** np.isin(attendees, llz)
     * (1 - np.isin(attendees, z))  # zero out
+    * (1 - np.isin(attendees, miss))  # missing
 )
 weights /= sum(weights)
 
