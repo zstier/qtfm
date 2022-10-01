@@ -50,21 +50,15 @@ print("=" * 10 + f" Week {week} " + "=" * 10)
 print(f"It is {dt.now().strftime('%Y-%m-%d %H:%M:%S')}.")
 
 with open("miss.txt") as f:
-    miss = [l.strip().split(",") for l in f.readlines() if not l.startswith("#")]
-    for m in miss:
-        if "" in m:
-            m.remove("")
-    # Now let's do a bunch of sanity checks!
+    miss = [[x for x in l.strip().split(",") if x] for l in f.readlines() if not l.startswith("#")]
+    # Now let's do a sanity check!
     assert (
         len(miss) >= week
     ), "miss.txt needs to have at least (# past talks) + 1 lines"
     miss = miss[week-1]
 
 with open("zeros.txt") as f:
-    zeros = [l.strip().split(",") for l in f.readlines() if not l.startswith("#")]
-    for z in zeros:
-        if "" in z:
-            z.remove("")
+    zeros = [[x for x in l.strip().split(",") if x] for l in f.readlines() if not l.startswith("#")]
     # Now let's do a bunch of sanity checks!
     assert (
         len(zeros) >= week
@@ -72,18 +66,18 @@ with open("zeros.txt") as f:
     assert not any(zeros[week:]), "people have zeroed out for future weeks??"
     zeros = zeros[:week]
 
-for pers in set(speakers):
-    if pers not in attendees:
-        print(f"WARN: speaker {pers} is not attendee")
-for pers in set(p for wk in zeros for p in wk):
-    if pers not in attendees:
-        print(f'WARN: zeroed-out person "{pers}" is not attendee')
+for pers in set(speakers) - set(attendees):
+    print(f"WARN: speaker {pers} is not attendee")
+for pers in {p for wk in zeros for p in wk} - set(attendees):
+    print(f'WARN: zeroed-out person "{pers}" is not attendee')
+for pers in set(miss) - set(attendees):
+    print(f'WARN: missing person "{pers}" is not attendee')
 
 llz, lz, z = [[], [], *zeros][-3:]
 if llz: print("weight doubled for zeroing 2 weeks ago: " + ", ".join(llz))
 if lz:  print("weight doubled for zeroing last week:   " + ", ".join(lz))
 if z:   print("zeroed this week: " + ", ".join(z))
-if miss:   print("missing this week: " + ", ".join(miss))
+if miss: print("missing this week: " + ", ".join(miss))
 assert len(set(z + lz + llz)) == len(z + lz + llz), "someone zeroed out too often!!"
 print()
 assert not set(z) & set(miss), "People missing don't need to zero out"
