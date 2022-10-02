@@ -93,7 +93,7 @@ if sys.argv[1:]:
     print("@rndgenbot's latest tweets are: [1], [2], [3]")
     seed_base = ""
     for tw in tweets:
-        (a, b) = map(int, *re.findall("numbers are (\d{,2}) and (\d{,3})!", tw.text))
+        (a, b) = map(int, *re.findall(r"numbers are (\d{,2}) and (\d{,3})!", tw.text))
         seed_base += f'{a:02}{b:03}'
 
     print()
@@ -101,6 +101,7 @@ if sys.argv[1:]:
     seed_base = int(seed_base)
 else:
     seed_base = int(input("enter (base) seed: "))
+    twitter = False
 
 
 # seed = 835845000375724 % (2**32)
@@ -166,6 +167,7 @@ SUBJECT = "[DRY] " * DRY + "The 🎲Quantum Croupier🎲 is pleased to announce 
 
 if not email:
     exit()
+
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
