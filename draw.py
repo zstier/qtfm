@@ -77,6 +77,8 @@ for zj, mj, last_spk in zip(zeros[:-1], misses, [None, *speakers]):
     assert not zj & mj, "People missing don't need to zero out: " + ", ".join(zj & mj)
     assert not (intr := zj & (lz | llz)), "zeroing while boosted:" + ", ".join(intr)
 
+    # llz = (llz & mj) | (lz - mj) 
+    # missing the week after you speak shouldn't be detrimental
     llz = (llz & mj - {last_spk}) | (lz - mj)
     lz = (lz & mj) | zj # lz for next week!
 
