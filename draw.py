@@ -13,8 +13,7 @@ RNGBOT_ID = 1128726096546025472  # twitter used id
 RNGBOT_URL = "https://twitter.com/rndgenbot"
 
 
-terminal = print
-_print = print
+terminal = _print = print
 
 if sys.argv[1:] and sys.argv[1] == "--dry":
     DRY = True
@@ -53,33 +52,33 @@ print(f"It is {dt.now().strftime('%Y-%m-%d %H:%M:%S')}.")
 
 with open("miss.txt") as f:
     misses = [{x for x in l.strip().split(",") if x} for l in f.readlines()]
-    # sanity check
-    assert len(misses) >= week, "miss.txt missing line for this week"
-    misses = misses[:week]
-    missing = misses[week - 1]
+# sanity check
+assert len(misses) >= week, "miss.txt missing line for this week"
+misses = misses[:week]
+missing = misses[week - 1]
 
 with open("zeros.txt") as f:
     zeros = [{x for x in l.strip().split(",") if x} for l in f.readlines()]
-    # sanity check
-    assert len(zeros) >= week, "zeros.txt missing line for this week"
-    assert not any(zeros[week:]), "people have zeroed out for future weeks??"
-    zeros = zeros[:week]
+# sanity check
+assert len(zeros) >= week, "zeros.txt missing line for this week"
+assert not any(zeros[week:]), "people have zeroed out for future weeks??"
+zeros = zeros[:week]
+z = zeros[week-1]
 
 for pers in set(speakers) - set(attendees):
     print(f"WARN: speaker {pers} is not attendee")
 for pers in reduce(or_, zeros, set()) - set(attendees):
     print(f'WARN: zeroed-out person "{pers}" is not attendee')
-for pers in reduce(or_, misses, set()) - set(attendees):
+for pers in reduce(or_, misses,set()) - set(attendees):
     print(f'WARN: missing person "{pers}" is not attendee')
 
-z = zeros[-1]
 llz, lz = set(), set()
-for zj, mj in zip(zeros[:-1], misses):
+for zj, mj, last_spk in zip(zeros[:-1], misses, [None, *speakers]):
     assert not zj & mj, "People missing don't need to zero out: " + ", ".join(zj & mj)
     assert not (intr := zj & (lz | llz)), "zeroing while boosted:" + ", ".join(intr)
 
-    llz = (llz & mj) | (lz - mj)
-    lz &= (lz & mj) | zj # lz for next week!
+    llz = (llz & mj - {last_spk}) | (lz - mj)
+    lz = (lz & mj) | zj # lz for next week!
 
 if lz: print("weight doubled for zeroing (first time): " + ", ".join(lz - missing))
 if llz: print("weight doubled for zeroing (second time): " + ", ".join(llz - missing))
@@ -151,7 +150,8 @@ print(f"🎉 {winners[0]} 🎉", end="")
 croupier("</marquee></b>", end="")
 print()
 croupier(
-    "If you can't talk tomorrow for some reason please reply-all ASAP so that the backup speaker may prepare"
+    "If you can't talk tomorrow for some reason please "
+    "reply-all ASAP so that the backup speaker may prepare"
 )
 
 print()
