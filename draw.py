@@ -52,14 +52,12 @@ print(f"It is {dt.now().strftime('%Y-%m-%d %H:%M:%S')}.")
 
 with open("miss.txt") as f:
     misses = [{x for x in l.strip().split(",") if x} for l in f.readlines()]
-# sanity check
 assert len(misses) >= week, "miss.txt missing line for this week"
 misses = misses[:week]
 missing = misses[week - 1]
 
 with open("zeros.txt") as f:
     zeros = [{x for x in l.strip().split(",") if x} for l in f.readlines()]
-# sanity check
 assert len(zeros) >= week, "zeros.txt missing line for this week"
 assert not any(zeros[week:]), "people have zeroed out for future weeks??"
 zeros = zeros[:week]
@@ -82,10 +80,10 @@ for zj, mj, last_spk in zip(zeros[:-1], misses, [None, *speakers]):
     llz = (llz & mj - {last_spk}) | (lz - mj)
     lz = (lz & mj) | zj # lz for next week!
 
-if lz: print("weight doubled for zeroing (first time): " + ", ".join(lz - missing))
-if llz: print("weight doubled for zeroing (second time): " + ", ".join(llz - missing))
-if z: print("zeroed this week: " + ", ".join(z))
-if missing: print("missing this week: " + ", ".join(missing))
+lz and print("weight doubled for zeroing (first time): " + ", ".join(lz - missing))
+llz and print("weight doubled for zeroing (second time): " + ", ".join(llz - missing))
+z and print("zeroed this week: " + ", ".join(z))
+missing and print("missing this week: " + ", ".join(missing))
 print()
 
 if sys.argv[1:]:
