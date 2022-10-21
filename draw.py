@@ -71,13 +71,13 @@ for pers in reduce(or_, misses,set()) - set(attendees):
     print(f'WARN: missing person "{pers}" is not attendee')
 
 llz, lz = set(), set()
-for zj, mj, last_spk in zip(zeros[:-1], misses, [None, *speakers]):
+for zj, mj, last_spk in zip(zeros[:-1], misses, speakers):
     assert not zj & mj, "People missing don't need to zero out: " + ", ".join(zj & mj)
     assert not (intr := zj & (lz | llz)), "zeroing while boosted:" + ", ".join(intr)
 
     # llz = (llz & mj) | (lz - mj) 
     # missing the week after you speak shouldn't be detrimental
-    llz = (llz & mj - {last_spk}) | (lz - mj)
+    llz = (llz & mj) | (lz - mj) - {last_spk}
     lz = (lz & mj) | zj # lz for next week!
 
 lz and print("weight doubled for zeroing (first time): " + ", ".join(lz - missing))
