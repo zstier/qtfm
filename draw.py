@@ -80,8 +80,8 @@ for zj, mj, last_spk in zip(zeros[:-1], misses, speakers):
     llz = (llz & mj) | (lz - mj) - {last_spk}
     lz = (lz & mj) | zj # lz for next week!
 
-lz and print("weight doubled for zeroing (first time): " + ", ".join(lz - missing))
-llz and print("weight doubled for zeroing (second time): " + ", ".join(llz - missing))
+lz - missing and print("weight doubled for zeroing (first time): " + ", ".join(lz - missing))
+llz - missing and print("weight doubled for zeroing (second time): " + ", ".join(llz - missing))
 z and print("zeroed this week: " + ", ".join(z))
 missing and print("missing this week: " + ", ".join(missing))
 print()
