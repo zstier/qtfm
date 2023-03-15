@@ -11,29 +11,81 @@ EMAIL = "quantumcroupier@gmail.com"
 MEDALS = ["🥇", "🥈", "🥉"]
 RNGBOT_ID = 1128726096546025472  # twitter used id
 RNGBOT_URL = "https://twitter.com/rndgenbot"
+BEACON_URL = 'https://api.drand.sh'
+
+
+def twitter_rand(tw_token):
+    import tweepy
+    # tw_token = sys.argv[1]
+    twitter = True
+    client = tweepy.Client(bearer_token=tw_token)
+    global tweets
+    tweets = client.get_users_tweets(RNGBOT_ID).data[:3]
+    print("@rndgenbot's latest tweets are: [1], [2], [3]")
+    seed_base = ""
+    for tw in tweets:
+        (a, b) = map(int, *re.findall(r"numbers are (\d{,2}) and (\d{,3})!", tw.text))
+        seed_base += f"{a:02}{b:03}"
+
+    print()
+    print(f"base seed is b={seed_base}")
+    return int(seed_base)
+
+
+def beacon_rand():
+    import urllib.request as req
+    from io import BytesIO
+    import json
+    import time
+    # now = int(time.strftime('%s'))
+    # info = json.load(req.urlopen(f'{BEACON_URL}/info'))
+    # delta = now - info['genesis_time']
+    # round = int(delta / int(info['period']) + .99)
+    data = json.load(req.urlopen(f'{BEACON_URL}/public/latest'))
+    print(f'drand beacon round {data["round"]}')
+    print(f'randomness is {data["randomness"]}')
+    return int(data['randomness'], 16)
+    
+
+
+import argparse
+parser = argparse.ArgumentParser(prog='Quantum Croupier')
+parser.add_argument('-t', '--twitter', action='store',
+                    help='twitter API key (not working anymore)')
+parser.add_argument('-b', '--beacon', action='store_true',
+                    help='toggle for using drand randomness beacon')
+parser.add_argument('-e', '--email', action='store',
+                    help='login token for email')
+parser.add_argument('--dry', action='store_true',
+                    help='perform a dry run')
+args = parser.parse_args()
+
+if args.twitter and args.beacon:
+    print('twitter and beacon sources are incompatible')
 
 
 terminal = _print = print
 
-if sys.argv[1:] and sys.argv[1] == "--dry":
-    DRY = True
-    sys.argv.pop(1)
-else:
-    DRY = False
+DRY = args.dry
 
-if sys.argv[2:]:
-    passwd = sys.argv[2]
+if args.email:
+    passwd = args.email
     email = True
     mail = io.StringIO()
 
-    def print(*args, **kwargs):
-        terminal(*args, **kwargs)
-        _print(*args, **kwargs, file=mail)
+    def print(*a, **kwargs):
+        terminal(*a, **kwargs)
+        _print(*a, **kwargs, file=mail)
 
-    croupier = lambda *args, **kwargs: terminal(*args, **kwargs, file=mail)
+    croupier = lambda *a, **kwargs: terminal(*a, **kwargs, file=mail)
 else:
     email = False
-    croupier = lambda *args, **kwargs: None
+    croupier = lambda *a, **kwargs: None
+
+def debug(*a, **kwargs):
+    terminal(*a, **kwargs)
+    if DRY and args.email:
+        _print(*a, **kwargs, file=mail)
 
 # read and validate input -----------------------------------------------------
 
@@ -64,11 +116,16 @@ zeros = zeros[:week]
 z = zeros[week-1]
 
 for pers in set(speakers) - set(attendees):
-    print(f"WARN: speaker {pers} is not attendee")
+    debug(f"WARN: speaker {pers} is not attendee")
 for pers in reduce(or_, zeros, set()) - set(attendees):
-    print(f'WARN: zeroed-out person "{pers}" is not attendee')
+    debug(f'WARN: zeroed-out person "{pers}" is not attendee')
 for pers in reduce(or_, misses,set()) - set(attendees):
-    print(f'WARN: missing person "{pers}" is not attendee')
+    debug(f'WARN: missing person "{pers}" is not attendee')
+
+# remove non-attendees from list of zeros and misses
+zeros = [z & set(attendees) for z in zeros]
+misses = [z & set(attendees) for z in misses]
+missing &= set(attendees)
 
 llz, lz = set(), set()
 for zj, mj, last_spk in zip(zeros[:-1], misses, speakers):
@@ -86,29 +143,22 @@ z and print("zeroed this week: " + ", ".join(z))
 missing and print("missing this week: " + ", ".join(missing))
 print()
 
-if sys.argv[1:]:
-    import tweepy
-
-    TW_TOKEN = sys.argv[1]
-    twitter = True
-    client = tweepy.Client(bearer_token=TW_TOKEN)
-    tweets = client.get_users_tweets(RNGBOT_ID).data[:3]
-    print("@rndgenbot's latest tweets are: [1], [2], [3]")
-    seed_base = ""
-    for tw in tweets:
-        (a, b) = map(int, *re.findall(r"numbers are (\d{,2}) and (\d{,3})!", tw.text))
-        seed_base += f"{a:02}{b:03}"
-
-    print()
-    print(f"base seed is b={seed_base}")
-    seed_base = int(seed_base)
-else:
-    seed_base = int(input("enter (base) seed: "))
-    twitter = False
-
+# if sys.argv[1:]:
+#     ...
+# else:
+#     seed_base = int(input("enter (base) seed: "))
+#     twitter = False
 
 # seed = 835845000375724 % (2**32)
-seed = seed_base % (2**32)
+
+if args.beacon:
+    seed_base = beacon_rand()
+elif args.twitter:
+    seed_base = twitter_rand(args.twitter)
+else:
+     seed_base = int(input("enter (base) seed: "))
+     twitter = False
+seed = seed_base % 2**32
 
 np.random.seed(seed)
 
@@ -159,7 +209,7 @@ print("The backups are:")
 for n, pers in enumerate(winners[1:]):
     print(f"{n + 2}. {pers}{MEDALS[n+1]}")
 
-if twitter:
+if args.twitter:
     print()
     for i, tw in enumerate(tweets):
         terminal(f"{[i+1]} https://twitter.com/rndgenbot/status/{tw.id}")
@@ -181,7 +231,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 with open("emails.txt") as f:
-    to_addrs = [l.strip() for l in f.readlines()]
+    to_addrs = [l.strip() for l in f.readlines() if not l.startswith("#")]
     if DRY:
         to_addrs = to_addrs[:1]
 
@@ -193,10 +243,18 @@ text = (
     + "</font>"
 )
 # text = re.sub(r"(🎉.*🎉)", "<marquee><b>\\1</b></marquee>", text)
-for i, tw in enumerate(tweets):
-    text = text.replace(
-        f"[{i+1}]",
-        f'<a href="https://twitter.com/rndgenbot/status/{tw.id}">[{i+1}]</a>',
+if args.twitter:
+    for i, tw in enumerate(tweets):
+        text = text.replace(
+            f"[{i+1}]",
+            f'<a href="https://twitter.com/rndgenbot/status/{tw.id}">[{i+1}]</a>',
+        )
+
+if args.beacon:
+    text = re.sub(
+        'beacon round (\d+)',
+        rf'beacon <a href="{BEACON_URL}/public/\1">round \1</a>',
+        text
     )
 
 message = MIMEMultipart()
