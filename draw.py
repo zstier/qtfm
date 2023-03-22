@@ -116,7 +116,7 @@ zeros = zeros[:week]
 z = zeros[week-1]
 
 for pers in set(speakers) - set(attendees):
-    debug(f"WARN: speaker {pers} is not attendee")
+    debug(f"WARN: speaker "{pers}" is not attendee")
 for pers in reduce(or_, zeros, set()) - set(attendees):
     debug(f'WARN: zeroed-out person "{pers}" is not attendee')
 for pers in reduce(or_, misses,set()) - set(attendees):
