@@ -193,7 +193,11 @@ for i, (pers, prob) in enumerate(zip(attendees, weights)):
     )
 croupier("</pre>", end="")
 
-winners = np.random.choice(attendees, size=3, replace=False, p=weights)
+if sum(weights > 0) == 2:
+    pick = 2
+else:
+    pick = 3
+winners = np.random.choice(attendees, size=pick, replace=False, p=weights)
 print(f"\nAnd the winner is ... ", end="")
 croupier("<marquee><b>", end="")
 print(f"🎉 {winners[0]} 🎉", end="")
